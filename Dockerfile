@@ -1,4 +1,4 @@
-FROM alpine:3.7
+FROM alpine:3.8
 
 ARG SERVER_ADMIN_EMAIL=noreply.docker.server@impresscms.org
 ARG SSL_CRT_FILE=/srv/ssl/server.crt
