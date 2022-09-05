@@ -1,0 +1,24 @@
+server {
+    listen *:80;
+    server_name _;
+    root /srv/www/htdocs/;
+
+    location ~* \.(?:css|js|map|vue|cur|gif|gz|htc|ico|jpeg|jpg|mp4|ogg|ogv|png|svg|svgz|ttf|webm|woff|woff2)$ {
+        expires 2w;
+        add_header Cache-Control "public";
+        log_not_found off;
+    }
+
+    location ~ \.php$ {
+        include fastcgi.conf;
+        include fastcgi_params;
+        fastcgi_pass unix:/run/php/php-fpm.sock
+    }
+
+    location / {
+        if (!-e $request_filename) {
+            rewrite ^\/?ref/(\d+).*$ http://\\$host/Ref/$1 permanent;
+            rewrite  ^(.*)$  /index.php last;
+        }
+    }
+}
