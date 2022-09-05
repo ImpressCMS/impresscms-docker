@@ -1,0 +1,11 @@
+/src/.codeclimate.yml
+/src/.editorconfig
+/src/.env.example
+/src/.gitattributes
+/src/*.md
+/src/phpunit.xml
+/src/index.html
+/src/.github/
+/src/docs/
+/src/tests/
+/src/htdocs/install/
