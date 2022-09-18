@@ -1,0 +1,43 @@
+version: '3.4'
+
+services:
+  impresscms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+      args:
+        VARIANT: nginx
+    image: impresscms/impresscms:dev
+    restart: always
+    environment:
+      DB_TYPE: pdo.mysql
+      DB_HOST: mysql
+      DB_USER: icms
+      DB_PASS: impress
+      DB_PCONNECT: 0
+      DB_NAME: impresscms
+      DB_CHARSET: utf8
+      DB_COLLATION: utf8_general_ci
+      DB_PORT: 3306
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./src:/srv/www
+    networks:
+      - main
+
+  mysql:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_USER: icms
+      MYSQL_PASSWORD: impress
+      MYSQL_DATABASE: impresscms
+      MYSQL_RANDOM_ROOT_PASSWORD: 'true'
+    networks:
+      - main
+
+networks:
+  main:
