@@ -56,11 +56,13 @@ COPY --from=powerman/dockerize:latest /usr/local/bin/* /usr/local/bin/
 ADD ./src/ /srv/www/
 
 RUN apk add --no-cache \
-      bash \
-      sudo && \
-    adduser -S www-data -G www-data -h /srv/www -s /bin/bash -H -D && \
-    mkdir -p /var/log/${VARIANT} && \
-    chown -R www-data:www-data /srv
+          bash \
+          sudo
+
+RUN adduser -S www-data -G www-data -h /srv/www -s /bin/bash -H -D && \
+    chown -R www-data:www-data /srv && \
+    mkdir -p /etc/impresscms && \
+    chown -R www-data:www-data /etc/impresscms
 
 RUN apk add --no-cache \
       composer \
@@ -68,6 +70,11 @@ RUN apk add --no-cache \
       php-fpm \
       php-json \
       php-pdo \
+      php-xml \
+      php-dom \
+      php-xmlreader \
+      php-xmlwriter \
+      php-tokenizer \
       php-gd \
       php-curl \
       php-mbstring \
@@ -89,8 +96,12 @@ RUN apk add --no-cache \
     rm -rf /etc/php/php-fpm.conf && \
     rm -rf /etc/php/php-fpm.d/www.conf
 
+RUN apk add --no-cache composer
+
 RUN /usr/local/bin/install-server.sh && \
     rm -rf /usr/local/bin/install-server.sh
+
+VOLUME /etc/impresscms
 
 EXPOSE 80 443
 
@@ -109,6 +120,13 @@ VOLUME /srv/www/htdocs/themes
 VOLUME /srv/www/htdocs/uploads
 VOLUME /srv/www/htdocs/vendor
 
+RUN cd /srv/www && \
+    composer install --no-dev --optimize-autoloader
+
+RUN touch /etc/mode && \
+    echo "dev" && \
+    chmod a=r /etc/mode
+
 ########################################## DEV ########################################################################
 
 FROM base AS dev
@@ -116,3 +134,7 @@ FROM base AS dev
 RUN apk add --no-cache \
         util-linux \
         mc
+
+RUN touch /etc/mode && \
+    echo "prod" && \
+    chmod a=r /etc/mode

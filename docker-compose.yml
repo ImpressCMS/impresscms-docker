@@ -20,6 +20,10 @@ services:
       DB_CHARSET: utf8
       DB_COLLATION: utf8_general_ci
       DB_PORT: 3306
+      INSTALL_ADMIN_PASS: admin
+      INSTALL_ADMIN_LOGIN: admin
+      INSTALL_ADMIN_NAME: Admin
+      INSTALL_ADMIN_EMAIL: admin@localhost
     ports:
       - "80:80"
       - "443:443"
