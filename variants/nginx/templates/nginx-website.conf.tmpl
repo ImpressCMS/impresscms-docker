@@ -2,6 +2,7 @@ server {
     listen *:80;
     server_name _;
     root /srv/www/htdocs/;
+    index index.php;
 
     location ~* \.(?:css|js|map|vue|cur|gif|gz|htc|ico|jpeg|jpg|mp4|ogg|ogv|png|svg|svgz|ttf|webm|woff|woff2)$ {
         expires 2w;
@@ -16,9 +17,6 @@ server {
     }
 
     location / {
-        if (!-e $request_filename) {
-            rewrite ^\/?ref/(\d+).*$ http://\\$host/Ref/$1 permanent;
-            rewrite  ^(.*)$  /index.php last;
-        }
+        try_files $uri $uri/ /index.php$is_args$args;
     }
 }

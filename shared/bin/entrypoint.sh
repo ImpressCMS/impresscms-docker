@@ -2,11 +2,13 @@
 
 set -e
 
+. update-environment-config.sh
+
 echo "Waiting for MySQL connection..."
 dockerize -wait "tcp://$DB_HOST:$DB_PORT" -wait-retry-interval 5s | indent.sh
 
 echo "Setuping impresscms..."
-setup-impresscms.sh | indent.sh
+. setup-impresscms.sh | indent.sh
 
 echo "Setuping php.."
 launch-php-fpm.sh | indent.sh
