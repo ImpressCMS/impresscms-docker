@@ -16,9 +16,6 @@ launch-php-fpm.sh | indent.sh
 echo "Setuping webserver..."
 launch-web-server.sh | indent.sh
 
-echo "Switching to www-data user..."
-su - www-data
-
 if [ "$#" -gt 0 ]; then
   echo "Executing command..."
   # shellcheck disable=SC2068

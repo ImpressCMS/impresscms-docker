@@ -59,10 +59,7 @@ RUN apk add --no-cache \
           bash \
           sudo
 
-RUN adduser -S www-data -G www-data -h /srv/www -s /bin/bash -H -D && \
-    chown -R www-data:www-data /srv && \
-    mkdir -p /etc/impresscms && \
-    chown -R www-data:www-data /etc/impresscms
+RUN mkdir -p /etc/impresscms
 
 RUN apk add --no-cache \
       composer \
@@ -90,13 +87,16 @@ RUN apk add --no-cache \
       php-posix \
       php-cli && \
     mkdir -p /var/run/php/ && \
-    chown www-data:www-data /var/run/php/ && \
     ln -s $(realpath /etc/php*) /etc/php && \
     ln -s $(realpath /usr/sbin/php-fpm8*) /usr/sbin/php-fpm && \
     rm -rf /etc/php/php-fpm.conf && \
     rm -rf /etc/php/php-fpm.d/www.conf
 
-RUN apk add --no-cache composer
+RUN apk add --no-cache composer && \
+    composer self-update --2.2 && \
+    mkdir -p /root/.composer && \
+    touch /root/.composer/composer.json && \
+    echo "{}" > /root/.composer/composer.json
 
 RUN /usr/local/bin/install-server.sh && \
     rm -rf /usr/local/bin/install-server.sh
@@ -124,7 +124,7 @@ RUN cd /srv/www && \
     composer install --no-dev --optimize-autoloader
 
 RUN touch /etc/mode && \
-    echo "dev" && \
+    echo "prod" > /etc/mode && \
     chmod a=r /etc/mode
 
 ########################################## DEV ########################################################################
@@ -136,5 +136,5 @@ RUN apk add --no-cache \
         mc
 
 RUN touch /etc/mode && \
-    echo "prod" && \
+    echo "dev" > /etc/mode && \
     chmod a=r /etc/mode
