@@ -2,6 +2,14 @@
 
 set -e
 
+RUNNING_MODE=$(cat /etc/mode)
+
+pushd /srv/www
+  if [ "$RUNNING_MODE" == "dev" ]; then
+    composer install 2>&1
+  fi;
+popd
+
 . update-environment-config.sh
 
 echo "Waiting for MySQL connection..."
