@@ -8,7 +8,10 @@ COPY ./shared/templates/ /srv/templates/
 COPY ./variants/${VARIANT}/bin/*.sh /usr/local/bin/
 COPY ./variants/${VARIANT}/templates/ /srv/templates/
 
-RUN chmod +x /usr/local/bin/*.sh
+RUN chmod +x /usr/local/bin/*.sh && \
+    apk add --no-cache dos2unix && \
+    dos2unix -u /usr/local/bin/*.sh && \
+    dos2unix -u /srv/templates/*.tmpl
 
 ########################################## BASE ########################################################################
 FROM alpine:latest AS base
