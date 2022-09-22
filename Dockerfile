@@ -98,14 +98,15 @@ RUN apk add --no-cache composer && \
     touch /root/.composer/composer.json && \
     echo "{}" > /root/.composer/composer.json
 
-RUN /usr/local/bin/install-server.sh && \
+RUN ls /usr/local/bin/*.sh && \
+    bash /usr/local/bin/install-server.sh && \
     rm -rf /usr/local/bin/install-server.sh
 
 VOLUME /etc/impresscms
 
 EXPOSE 80 443
 
-ENTRYPOINT entrypoint.sh
+ENTRYPOINT bash /usr/local/bin/entrypoint.sh
 
 ########################################## PROD ########################################################################
 
