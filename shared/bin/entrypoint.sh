@@ -4,12 +4,6 @@ set -e
 
 RUNNING_MODE=$(cat /etc/mode)
 
-pushd /srv/www
-  if [ "$RUNNING_MODE" == "dev" ]; then
-    composer install 2>&1
-  fi;
-popd
-
 . update-environment-config.sh
 
 echo "Waiting for MySQL connection..."
@@ -23,6 +17,11 @@ launch-php-fpm.sh | indent.sh
 
 echo "Setuping webserver..."
 launch-web-server.sh | indent.sh
+
+echo "Touchoing log files..."
+touch $PHP_FPM_ERROR_LOG
+touch $WEBSERVER_ERROR_LOG
+touch $WEBSERVER_ACCESS_LOG
 
 echo "All setuping done. Running."
 tail -f /var/log/{nginx,php8}/*.log

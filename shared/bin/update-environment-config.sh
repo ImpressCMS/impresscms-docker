@@ -6,6 +6,10 @@ if [ "$APP_KEY" != "" ] && [ "$DB_PREFIX" != "" ]; then
   exit 0
 fi;
 
+if [ ! -f /etc/environment ]; then
+  touch /etc/environment
+fi
+
 . /etc/environment
 
 if [ "$APP_KEY" != "" ] && [ "$DB_PREFIX" != "" ]; then

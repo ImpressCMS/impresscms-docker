@@ -52,6 +52,10 @@ ENV PHP_FPM_MAX_CHILDREN=10 \
     PHP_FPM_DISPLAY_ERRORS=off \
     PHP_FPM_MEMORY_LIMIT=256M
 
+# Composer ENV variables
+ENV COMPOSER_NO_INTERACTION=1 \
+    COMPOSER_ALLOW_SUPERUSER=1
+
 COPY --from=variant_data /usr/local/bin/*.sh /usr/local/bin/
 COPY --from=variant_data /srv/templates/ /srv/templates/
 COPY --from=powerman/dockerize:latest /usr/local/bin/* /usr/local/bin/
@@ -86,15 +90,18 @@ RUN apk add --no-cache \
       php-pdo_mysql \
       php-phar \
       php-posix \
+      php-intl \
       php-cli && \
     mkdir -p /var/run/php/ && \
     ln -s $(realpath /etc/php*) /etc/php && \
     ln -s $(realpath /usr/sbin/php-fpm8*) /usr/sbin/php-fpm && \
     rm -rf /etc/php/php-fpm.conf && \
-    rm -rf /etc/php/php-fpm.d/www.conf
+    rm -rf /etc/php/php-fpm.d/www.conf && \
+    php -v
 
 RUN apk add --no-cache composer && \
-    composer self-update --2.2 && \
+    composer self-update && \
+    composer -v && \
     mkdir -p /root/.composer && \
     touch /root/.composer/composer.json && \
     echo "{}" > /root/.composer/composer.json
@@ -104,6 +111,9 @@ RUN ls /usr/local/bin/*.sh && \
     rm -rf /usr/local/bin/install-server.sh
 
 ADD ./src/ /srv/www/
+
+RUN cd /srv/www && \
+    composer install --no-dev --optimize-autoloader
 
 VOLUME /etc/impresscms
 
@@ -123,9 +133,6 @@ VOLUME /srv/www/htdocs/include
 VOLUME /srv/www/htdocs/themes
 VOLUME /srv/www/htdocs/uploads
 VOLUME /srv/www/htdocs/vendor
-
-RUN cd /srv/www && \
-    composer install --no-dev --optimize-autoloader
 
 RUN touch /etc/mode && \
     echo "prod" > /etc/mode && \
