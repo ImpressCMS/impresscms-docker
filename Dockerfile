@@ -37,8 +37,8 @@ ENV URL=http://localhost \
     INSTALL_ADMIN_EMAIL=""
 
 # WebServer Env variables
-ENV WEBSERVER_ERROR_LOG=/dev/stderr \
-    WEBSERVER_ACCESS_LOG=/dev/stdout \
+ENV WEBSERVER_ERROR_LOG=/var/log/nginx/error.log \
+    WEBSERVER_ACCESS_LOG=/var/log/nginx/access.log \
     WEBSERVER_GZIP=off \
     WEBSERVER_POST_MAX_SIZE=20M
 
@@ -47,7 +47,7 @@ ENV PHP_FPM_MAX_CHILDREN=10 \
     PHP_FPM_MIN_SPARE_SERVERS=5 \
     PHP_FPM_MAX_SPARE_SERVERS=10 \
     PHP_FPM_MAX_REQUESTS=1000 \
-    PHP_FPM_ERROR_LOG=/dev/stderr \
+    PHP_FPM_ERROR_LOG=/var/log/php8/error.log \
     PHP_FPM_LOG_ERRORS=on \
     PHP_FPM_DISPLAY_ERRORS=off \
     PHP_FPM_MEMORY_LIMIT=256M
@@ -55,8 +55,6 @@ ENV PHP_FPM_MAX_CHILDREN=10 \
 COPY --from=variant_data /usr/local/bin/*.sh /usr/local/bin/
 COPY --from=variant_data /srv/templates/ /srv/templates/
 COPY --from=powerman/dockerize:latest /usr/local/bin/* /usr/local/bin/
-
-ADD ./src/ /srv/www/
 
 RUN apk add --no-cache \
           bash \
@@ -104,6 +102,8 @@ RUN apk add --no-cache composer && \
 RUN ls /usr/local/bin/*.sh && \
     bash /usr/local/bin/install-server.sh && \
     rm -rf /usr/local/bin/install-server.sh
+
+ADD ./src/ /srv/www/
 
 VOLUME /etc/impresscms
 
