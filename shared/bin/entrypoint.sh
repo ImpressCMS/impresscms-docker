@@ -24,10 +24,5 @@ launch-php-fpm.sh | indent.sh
 echo "Setuping webserver..."
 launch-web-server.sh | indent.sh
 
-if [ "$#" -gt 0 ]; then
-  echo "Executing command..."
-  # shellcheck disable=SC2068
-  $@
-else
-  trap : TERM INT; (while true; do sleep 1000; done) & wait
-fi;
+echo "All setuping done. Running."
+tail -f /var/log/{nginx,php8}/*.log
