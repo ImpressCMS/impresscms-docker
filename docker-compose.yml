@@ -24,6 +24,7 @@ services:
       INSTALL_ADMIN_LOGIN: admin
       INSTALL_ADMIN_NAME: Admin
       INSTALL_ADMIN_EMAIL: admin@localhost
+      PHP_FPM_DISPLAY_ERRORS: 'true'
     ports:
       - "80:80"
       - "443:443"
