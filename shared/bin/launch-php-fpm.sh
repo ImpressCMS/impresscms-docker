@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+set -o pipefail
 
 PHP_FPM_START_SERVERS=$(((${PHP_FPM_MIN_SPARE_SERVERS} + ${PHP_FPM_MAX_SPARE_SERVERS}) / 2)) \
   dockerize \

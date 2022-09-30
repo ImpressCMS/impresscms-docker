@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 
 set -e
+set -o pipefail
 
 RUNNING_MODE=$(cat /etc/mode)
 
+echo "Checking vendor..."
+try-restore-vendor.sh | indent.sh
+
+echo "Updating ENV variables..."
 . update-environment-config.sh
 
 echo "Waiting for MySQL connection..."

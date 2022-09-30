@@ -134,6 +134,8 @@ VOLUME /srv/www/htdocs/themes
 VOLUME /srv/www/htdocs/uploads
 VOLUME /srv/www/htdocs/vendor
 
+ENV COMPOSER_NO_DEV=1
+
 RUN touch /etc/mode && \
     echo "prod" > /etc/mode && \
     chmod a=r /etc/mode
@@ -144,7 +146,12 @@ FROM base AS dev
 
 RUN apk add --no-cache \
         util-linux \
-        mc
+        mc \
+        p7zip
+
+RUN mkdir -p /srv/bkp && \
+    cd /srv/www && \
+    7z a -mx9 -r /srv/bkp/vendor.7z ./vendor
 
 RUN touch /etc/mode && \
     echo "dev" > /etc/mode && \
