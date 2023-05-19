@@ -9,7 +9,9 @@ services:
       args:
         VARIANT: nginx
     image: impresscms/impresscms:dev
-    restart: always
+    depends_on:
+      - mysql
+    restart: "no"
     environment:
       DB_TYPE: pdo.mysql
       DB_HOST: mysql

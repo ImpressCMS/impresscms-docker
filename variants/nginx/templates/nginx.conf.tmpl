@@ -52,7 +52,7 @@ http {
 
         # Enables the specified protocols. Default is TLSv1 TLSv1.1 TLSv1.2.
         # TIP: If you're not obligated to support ancient clients, remove TLSv1.1.
-        ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
+        # ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
 
         # Path of the file with Diffie-Hellman parameters for EDH ciphers.
         # TIP: Generate with: `openssl dhparam -out /etc/ssl/nginx/dh2048.pem 2048`
@@ -60,18 +60,18 @@ http {
 
         # Specifies that our cipher suits should be preferred over client ciphers.
         # Default is 'off'.
-        ssl_prefer_server_ciphers on;
+        # ssl_prefer_server_ciphers on;
 
         # Enables a shared SSL cache with size that can hold around 8000 sessions.
         # Default is 'none'.
-        ssl_session_cache shared:SSL:2m;
+        # ssl_session_cache shared:SSL:2m;
 
         # Specifies a time during which a client may reuse the session parameters.
         # Default is '5m'.
-        ssl_session_timeout 1h;
+        # ssl_session_timeout 1h;
 
         # Disable TLS session tickets (they are insecure). Default is 'on'.
-        ssl_session_tickets off;
+        # ssl_session_tickets off;
 
 
         # Enable gzipping of responses.

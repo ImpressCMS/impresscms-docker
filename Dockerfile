@@ -40,7 +40,11 @@ ENV URL=http://localhost \
 ENV WEBSERVER_ERROR_LOG=/var/log/nginx/error.log \
     WEBSERVER_ACCESS_LOG=/var/log/nginx/access.log \
     WEBSERVER_GZIP=off \
-    WEBSERVER_POST_MAX_SIZE=20M
+    WEBSERVER_POST_MAX_SIZE=20M \
+    WEBSERVER_DOMAIN=localhost \
+    WEBSERVER_SSL_SERVER_CERTIFICATE="" \
+    WEBSERVER_SSL_SERVER_KEY="" \
+    WEBSERVER_SSL_CLIENT_CERTIFICATE=""
 
 # PHP ENV variables
 ENV PHP_FPM_MAX_CHILDREN=10 \
@@ -62,7 +66,8 @@ COPY --from=powerman/dockerize:latest /usr/local/bin/* /usr/local/bin/
 
 RUN apk add --no-cache \
           bash \
-          sudo
+          sudo \
+          runit
 
 RUN mkdir -p /etc/impresscms
 
@@ -115,6 +120,11 @@ ADD ./src/ /srv/www/
 RUN cd /srv/www && \
     composer install --no-dev --optimize-autoloader
 
+RUN mkdir -p /opt/services/php-fpm && \
+    mkdir -p "/opt/services/${VARIANT}" && \
+    ln -s /usr/local/bin/launch-php-fpm.sh /opt/services/php-fpm/run && \
+    ln -s /usr/local/bin/launch-web-server.sh "/opt/services/${VARIANT}/run"
+
 VOLUME /etc/impresscms
 
 EXPOSE 80 443
@@ -140,6 +150,10 @@ RUN touch /etc/mode && \
     echo "prod" > /etc/mode && \
     chmod a=r /etc/mode
 
+RUN apk add --no-cache socat && \
+    wget -O -  https://get.acme.sh | sh && \
+    ln -s /root/.acme.sh/acme.sh /usr/local/bin/acme.sh
+
 ########################################## DEV ########################################################################
 
 FROM base AS dev
@@ -147,7 +161,8 @@ FROM base AS dev
 RUN apk add --no-cache \
         util-linux \
         mc \
-        p7zip
+        p7zip \
+        openssl
 
 RUN mkdir -p /srv/bkp && \
     cd /srv/www && \
