@@ -1,110 +1,173 @@
-FROM alpine:latest
+########################################## VARIANT DATA ################################################################
+FROM alpine:latest AS variant_data
 
-ARG SERVER_ADMIN_EMAIL=noreply.docker.server@impresscms.org
-ARG SSL_CRT_FILE=/srv/ssl/server.crt
-ARG SSL_KEY_FILE=/srv/ssl/server.key
-ARG GITHUB_RELEASE_ID=latest
-ARG SERVER_NAME=impresscms.test
-ARG CERTIFICATE_COUNTRY_ISO_CODE=UN
-ARG CERTIFICATE_STATE=Unknown
-ARG CERTIFICATE_LOCATION=Unknown
-ARG CERTIFICATE_ORGANISATION_NAME="ImpressCMS Demo Network"
-ARG CERTIFICATE_ORGANISATION_UNIT=User
-ARG CERTIFICATE_COMMON_NAME=another.impresscms.demo
-ARG ICMS_DB_HOST
-ARG ICMS_DB_USER
-ARG ICMS_DB_PASS
-ARG ICMS_DB_PCONNECT=0
-ARG ICMS_DB_NAME=impresscms
-ARG ICMS_URL=http://localhost
-ARG ICMS_DB_TYPE=mysql
-ARG ICMS_DB_CHARSET=utf8
-ARG ICMS_DB_COLLATION=utf8_general_ci
-ARG ICMS_DB_PREFIX
-ARG ICMS_DB_SALT
+ARG VARIANT=nginx
 
-ENV SERVER_ADMIN_EMAIL=${SERVER_ADMIN_EMAIL} \
-    SSL_CRT_FILE=${SSL_CRT_FILE} \
-    SSL_KEY_FILE=${SSL_KEY_FILE} \
-    SERVER_NAME=${SERVER_NAME} \
-    ICMS_DB_HOST=${ICMS_DB_HOST} \
-    ICMS_DB_USER=${ICMS_DB_USER} \
-    ICMS_DB_PASS=${ICMS_DB_PASS} \
-    ICMS_DB_NAME=${ICMS_DB_NAME} \
-    ICMS_DB_PCONNECT=${ICMS_DB_PCONNECT} \
-    ICMS_URL=${ICMS_URL} \
-    ICMS_DB_TYPE=${ICMS_DB_TYPE} \
-    ICMS_DB_CHARSET=${ICMS_DB_CHARSET} \
-    ICMS_DB_COLLATION=${ICMS_DB_COLLATION} \
-    ICMS_DB_PREFIX=${ICMS_DB_PREFIX} \
-    ICMS_DB_SALT=${ICMS_DB_SALT}
+COPY ./shared/bin/*.sh /usr/local/bin/
+COPY ./shared/templates/ /srv/templates/
+COPY ./variants/${VARIANT}/bin/*.sh /usr/local/bin/
+COPY ./variants/${VARIANT}/templates/ /srv/templates/
+
+RUN chmod +x /usr/local/bin/*.sh && \
+    apk add --no-cache dos2unix && \
+    dos2unix -u /usr/local/bin/*.sh && \
+    dos2unix -u /srv/templates/*.tmpl
+
+########################################## BASE ########################################################################
+FROM alpine:latest AS base
+
+ARG VARIANT=nginx
+
+# ImpressCMS env variables
+ENV URL=http://localhost \
+    DB_TYPE=pdo.mysql \
+    DB_HOST="" \
+    DB_USER=root \
+    DB_PASS="" \
+    DB_PCONNECT=0 \
+    DB_NAME=icms \
+    DB_CHARSET=utf8 \
+    DB_COLLATION=utf8_general_ci \
+    DB_PREFIX="" \
+    APP_KEY="" \
+    DB_PORT=3306 \
+    INSTALL_ADMIN_PASS="" \
+    INSTALL_ADMIN_LOGIN="" \
+    INSTALL_ADMIN_NAME="" \
+    INSTALL_ADMIN_EMAIL=""
+
+# WebServer Env variables
+ENV WEBSERVER_ERROR_LOG=/var/log/nginx/error.log \
+    WEBSERVER_ACCESS_LOG=/var/log/nginx/access.log \
+    WEBSERVER_GZIP=off \
+    WEBSERVER_POST_MAX_SIZE=20M \
+    WEBSERVER_DOMAIN=localhost \
+    WEBSERVER_SSL_SERVER_CERTIFICATE="" \
+    WEBSERVER_SSL_SERVER_KEY="" \
+    WEBSERVER_SSL_CLIENT_CERTIFICATE=""
+
+# PHP ENV variables
+ENV PHP_FPM_MAX_CHILDREN=10 \
+    PHP_FPM_MIN_SPARE_SERVERS=5 \
+    PHP_FPM_MAX_SPARE_SERVERS=10 \
+    PHP_FPM_MAX_REQUESTS=1000 \
+    PHP_FPM_ERROR_LOG=/var/log/php8/error.log \
+    PHP_FPM_LOG_ERRORS=on \
+    PHP_FPM_DISPLAY_ERRORS=off \
+    PHP_FPM_MEMORY_LIMIT=256M
+
+# Composer ENV variables
+ENV COMPOSER_NO_INTERACTION=1 \
+    COMPOSER_ALLOW_SUPERUSER=1
+
+COPY --from=variant_data /usr/local/bin/*.sh /usr/local/bin/
+COPY --from=variant_data /srv/templates/ /srv/templates/
+COPY --from=powerman/dockerize:latest /usr/local/bin/* /usr/local/bin/
 
 RUN apk add --no-cache \
-                       apache2 \
-                       apache2-utils \
-                       apache2-ctl \
-                       apache2-ssl \
-                       apache2-error \
-                       php5-apache2 \
-                       php5-mysql \
-                       php5-suhosin \
-                       php5-xml \
-                       php5-gd \
-                       php5-curl \
-                       php5-bcmath \
-                       php5-mysqli \
-                       php5-pdo_mysql \
-                       php5-openssl \
-                       php5-iconv \
-                       curl \
-                       wget \
-                       lynx \
-                       mysql-client \
-                       bash \
-                       sed \
-                       openssl \
-                       outils-md5
+          bash \
+          sudo \
+          runit
 
-COPY ./scripts/service.sh /usr/local/bin/fg-apache
-COPY ./scripts/rand_str.sh /usr/local/bin/rand-str
-COPY ./scripts/hash_args.sh /usr/local/bin/hash-args
-COPY ./scripts/save_config.sh /usr/local/bin/impresscms-save-config
-COPY ./configs/apache2/conf.d/ /etc/apache2/conf.d/
-COPY ./configs/apache2/httpd.conf /etc/apache2/httpd.conf
+RUN mkdir -p /etc/impresscms
 
-RUN mkdir -p /srv/www && \
-    mkdir -p /srv/ssl && \
-    mkdir -p /run/apache2 && \
-    mkdir -p /srv/templates && \
-    mkdir -p /etc/impresscms && \
-    cd /etc/apache2 && \
-    ln -s /usr/lib/apache2 modules && \
-    rm -rf /var/www && \
-    chmod +x /usr/local/bin/*
+RUN apk add --no-cache \
+      composer \
+      fcgi \
+      php-fpm \
+      php-json \
+      php-pdo \
+      php-xml \
+      php-dom \
+      php-xmlreader \
+      php-xmlwriter \
+      php-tokenizer \
+      php-gd \
+      php-curl \
+      php-mbstring \
+      php-session \
+      php-ctype \
+      php-fileinfo \
+      php-gettext \
+      php-iconv \
+      php-opcache \
+      php-pcntl \
+      php-pdo_mysql \
+      php-phar \
+      php-posix \
+      php-intl \
+      php-cli && \
+    mkdir -p /var/run/php/ && \
+    ln -s $(realpath /etc/php*) /etc/php && \
+    ln -s $(realpath /usr/sbin/php-fpm8*) /usr/sbin/php-fpm && \
+    rm -rf /etc/php/php-fpm.conf && \
+    rm -rf /etc/php/php-fpm.d/www.conf && \
+    php -v
 
-RUN apk add --no-cache jq && \
-    RELEASE_INFO_URL=https://api.github.com/repos/ImpressCMS/impresscms/releases/${GITHUB_RELEASE_ID} && \
-    RELEASE_TAR_URL=$(curl -s $RELEASE_INFO_URL | jq -r ".tarball_url") && \
-    cd /tmp && \
-    wget -O impresscms.tar.gz $RELEASE_TAR_URL && \
-    tar xvzf impresscms.tar.gz && \
-    cd ImpressCMS-impresscms-* && \
-    mv * /srv/www && \
-    cd .. && \
-    rm -rf impresscms.tar.gz ImpressCMS-impresscms-* && \
-    apk del --no-cache --purge jq && \
-    cd /srv/www && \
-    chmod -R 777 htdocs/templates_c htdocs/cache htdocs/uploads
+RUN apk add --no-cache composer && \
+    composer self-update && \
+    composer -v && \
+    mkdir -p /root/.composer && \
+    touch /root/.composer/composer.json && \
+    echo "{}" > /root/.composer/composer.json
 
-RUN openssl req -x509 \
-    -nodes \
-    -days 365 \
-    -newkey rsa:2048 \
-    -keyout /srv/ssl/server.key \
-    -out /srv/ssl/server.crt \
-    -subj "/C=${CERTIFICATE_COUNTRY_ISO_CODE}/ST=${CERTIFICATE_STATE}/L=${CERTIFICATE_LOCATION}/O=${CERTIFICATE_ORGANISATION_NAME}/OU=${CERTIFICATE_ORGANISATION_UNIT}/CN=${CERTIFICATE_COMMON_NAME}"
+RUN ls /usr/local/bin/*.sh && \
+    bash /usr/local/bin/install-server.sh && \
+    rm -rf /usr/local/bin/install-server.sh
+
+ADD ./src/ /srv/www/
+
+RUN cd /srv/www && \
+    composer install --no-dev --optimize-autoloader
+
+RUN mkdir -p /opt/services/php-fpm && \
+    mkdir -p "/opt/services/${VARIANT}" && \
+    ln -s /usr/local/bin/launch-php-fpm.sh /opt/services/php-fpm/run && \
+    ln -s /usr/local/bin/launch-web-server.sh "/opt/services/${VARIANT}/run"
+
+VOLUME /etc/impresscms
 
 EXPOSE 80 443
-VOLUME ["/srv/www/htdocs/modules", "/srv/www/htdocs/templates_c", "/srv/www/htdocs/cache", "/srv/www/htdocs/uploads", "/etc/impresscms"]
-ENTRYPOINT ["/usr/local/bin/fg-apache"]
 
+ENTRYPOINT bash /usr/local/bin/entrypoint.sh
+
+########################################## PROD ########################################################################
+
+FROM base AS prod
+
+VOLUME /srv/www/modules
+VOLUME /srv/www/language
+VOLUME /srv/www/storage
+VOLUME /srv/www/htdocs/libraries
+VOLUME /srv/www/htdocs/include
+VOLUME /srv/www/htdocs/themes
+VOLUME /srv/www/htdocs/uploads
+VOLUME /srv/www/htdocs/vendor
+
+ENV COMPOSER_NO_DEV=1
+
+RUN touch /etc/mode && \
+    echo "prod" > /etc/mode && \
+    chmod a=r /etc/mode
+
+RUN apk add --no-cache socat && \
+    wget -O -  https://get.acme.sh | sh && \
+    ln -s /root/.acme.sh/acme.sh /usr/local/bin/acme.sh
+
+########################################## DEV ########################################################################
+
+FROM base AS dev
+
+RUN apk add --no-cache \
+        util-linux \
+        mc \
+        p7zip \
+        openssl
+
+RUN mkdir -p /srv/bkp && \
+    cd /srv/www && \
+    7z a -mx9 -r /srv/bkp/vendor.7z ./vendor
+
+RUN touch /etc/mode && \
+    echo "dev" > /etc/mode && \
+    chmod a=r /etc/mode

@@ -1,0 +1,22 @@
+server {
+    listen *:80;
+    server_name _;
+    root /srv/www/htdocs/;
+    index index.php;
+
+    location ~* \.(?:css|js|map|vue|cur|gif|gz|htc|ico|jpeg|jpg|mp4|ogg|ogv|png|svg|svgz|ttf|webm|woff|woff2)$ {
+        expires 2w;
+        add_header Cache-Control "public";
+        log_not_found off;
+    }
+
+    location ~ \.php$ {
+        include fastcgi.conf;
+        include fastcgi_params;
+        fastcgi_pass unix:/var/run/php/php-fpm.sock;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.php$is_args$args;
+    }
+}
